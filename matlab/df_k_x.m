@@ -8,7 +8,15 @@ function df_k_x_val = df_k_x(k,x,args)
 %   args: additional arguments. You must pass at least D (dimension), and 
 %         L (period)
 % Outputs:
-%   df_k_x_val: length(k)x1 gradient coefficients
+%   df_k_x_val: 2xlength(k) gradient coefficients
+
+    if args.D~=2
+        error("myComponent:notImplemented",strcat("Error. \nlinear df_",...
+              "k_x not yet implemented for dimensions other than 2 (di",...
+              "mension is %d)"), args.D);
+    end
+
+    % warning('Only the real part of df_k_x is currently implemented');
 
     % ?        .*                            .*
     df_k_x_val=-2*pi*args.L^(-args.D-1)*...
