@@ -11,7 +11,7 @@ L=2; % period
 Ai={[1 0;0 1],[1 0;0 -1],[-1 0;0 1],[-1 0;0 -1]};
 
 if D~=2
-    error("myComponent:no tImplemented",strcat("Error. \nlinear transf",...
+    error("myComponent:notImplemented",strcat("Error. \nlinear transf",...
           "ormation matrices Am, indeces K are not yet implemented for",...
           " dimensions other than 2 (dimension is %d)"), D);
 end
@@ -41,7 +41,6 @@ args.Mu=Mu;
 args.Sigma=Sigma;
 args.K=K;
 args.N=N;
-debug
 
 fdot=@(x,u) eye(2)*u; % craft's dynamics
 
@@ -90,6 +89,9 @@ sol=opti.solve();
 figure;
 xres=opti.debug.value(X);
 plot(xres(1,:)',xres(2,:)');
+clear xlim;
+xlim([0 1]);
+ylim([0 1]);
 hold on;
 plot(Mu(1,1),Mu(2,1),'o');
 plot(Mu(1,2),Mu(2,2),'o');
