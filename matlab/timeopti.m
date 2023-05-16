@@ -79,6 +79,8 @@ end
 epsilon_xt_val=epsilon_xt(X,args);
 opti.subject_to(epsilon_xt_val<=.0035); % ergodicity metrics constraint
 
+    opti.subject_to(-.1<=X(:,:)-[.17;.38]<=.1);
+
 opti.minimize(T); % objective, i.e., minimum time
 
 opti.solver('ipopt');
@@ -95,4 +97,6 @@ clear xlim;
 hold on;
 plot(Mu(1,1),Mu(2,1),'o');
 plot(Mu(1,2),Mu(2,2),'o');
+
+
 
