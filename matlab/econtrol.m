@@ -1,13 +1,6 @@
 
-% Ergodic controller for a spatial distribution (two gaussians in the
+% Ergodic controller for a spatial distribution (four gaussians in the
 % mixture model)
-
-% Same parameters as in (see calinon.m):
-% Calinon, S. (2020). Mixture Models for the Analysis, Edition, and 
-% Synthesis of Continuous Time Series. In: Bouguila, N., Fan, W. (eds) 
-% Mixture Models and Applications. Unsupervised and Semi-Supervised 
-% Learning. Springer, Cham. 
-% https://doi.org/10.1007/978-3-030-23876-6_3
 
 %% definitions
 
@@ -24,11 +17,15 @@ if D~=2
 end
 Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
 
-Mu(:,1)=[.5;.7];
-Mu(:,2)=[.6;.3];
-Sigma(:,:,1)=[.3;.1]*[.3;.1]'*5e-1+eye(D)*5e-3;
-Sigma(:,:,2)=[.1;.2]*[.1;.2]'*3e-1+eye(D)*1e-2;
-alpha=[.5;.5];
+Mu(:,1)=[.33333;.14285];
+Mu(:,2)=[.83332;.1    ];
+Mu(:,3)=[.4    ;.57142];
+Mu(:,4)=[.83332;.85713];
+Sigma(:,:,1)=[.1;.1]*[.1;.1]'*1e-3+eye(D)*1e-3;
+Sigma(:,:,2)=Sigma(:,:,1);
+Sigma(:,:,3)=Sigma(:,:,1);
+Sigma(:,:,4)=Sigma(:,:,1);
+alpha=[.25;.25;.25;.25];
 
 N=2000;
 dt=1e-2;
@@ -110,11 +107,6 @@ for j=1:(length(K)^D)^2
 end
 
 figure;
-map=[.2 .1 .5
-     .1 .5 .8
-     .2 .7 .6
-     .8 .7 .3
-     .9 1 0];
 h=surf(...
        reshape(probx,length(K)^D,length(K)^D),...
        reshape(proby,length(K)^D,length(K)^D),...
@@ -125,19 +117,26 @@ colormap(flipud(bone(30)));
 z=get(h,'ZData');
 set(h,'ZData',z-10);
 view(2);
-grid on
-hold on
-plot(Mu(1,1),Mu(2,1),'g^');
-plot(Mu(1,2),Mu(2,2),'g^');
-plot(debug.x(1,:),debug.x(2,:),'red','LineWidth',1.4);
+grid on;
+hold on;
+for j=1:length(alpha)
+    plot(Mu(1,j),Mu(2,j),'g^');
+end
 clear xlim;
 xlim([0 1]);
 ylim([0 1]);
+axis square;
 ax1=gca;
 ax1.YGrid='on';
 ax1.Layer='top';
 ax1.GridLineStyle=':';
 ax1.GridAlpha=.25;
+pl=plot(debug.x(1,1),debug.x(2,1),'red','LineWidth',1.4);
+for j=2:N
+    pause(.05);
+    delete(pl);
+    pl=plot(debug.x(1,1:j),debug.x(2,1:j),'red','LineWidth',1.4);
+end
 set(ax1,'XTick',get(ax1,'YTick'));
 
 
