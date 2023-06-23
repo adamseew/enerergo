@@ -30,7 +30,7 @@ Sigma(:,:,4)=Sigma(:,:,1);
 N=2000;
 dt=1e-2;
 
-xlim=[-L/2 L/2]; % limits (square)
+xlim_=[-L/2 L/2]; % limits (square)
 ulim=[0 1];
 
 x0=[.1;.3]; % initial guesses
@@ -83,9 +83,9 @@ addpath('~/casadi');
 import casadi.*;
 opti=casadi.Opti();
 
-phi_k_val=opti.variable(length(K)^D,1);
-f_k_x_val=opti.variable(length(K)^D,1);
-df_k_x_val=opti.variable(2,length(K)^D);
+PHI_K_VAL=opti.variable(length(K)^D,1); % aux variables
+F_K_X_VAL=opti.variable(length(K)^D,1);
+DF_K_X_VAL=opti.variable(2,length(K)^D);
 
 X=opti.variable(2,N); % state
 U=opti.variable(2,N-1); % input
@@ -111,15 +111,15 @@ for t=1:N-1
 
     for k=1:length(K)
        
-        f_k_x_val((k-1)*length(K)+ ...
+        F_K_X_VAL((k-1)*length(K)+ ...
             1:k*length(K))=...
             f_k_x(K(:,:,k),x,args);
-        df_k_x_val(:,(k-1)*length(K)+1:k*length(K))=...
+        DF_K_X_VAL(:,(k-1)*length(K)+1:k*length(K))=...
             df_k_x(K(:,:,k),x,args)*L^D;
 
         if t==1 % phi_k is not dependent on x, i.e., it is the same at
                 % each t
-            phi_k_val((k-1)*length(K)+1:k*length(K))=...
+            PHI_K_VAL((k-1)*length(K)+1:k*length(K))=...
                 phi_k(K(:,:,k),args);
             for j=1:length(args.K)
                 Lambda_k((k-1)*length(K)+j,(k-1)*length(K)+j)=...
@@ -127,8 +127,8 @@ for t=1:N-1
             end
         end
     end
-    wt=wt+f_k_x_val;
-    utilde=utilde-1*df_k_x_val*Lambda_k*(wt/t-phi_k_val);
+    wt=wt+F_K_X_VAL;
+    utilde=utilde-1*DF_K_X_VAL*Lambda_k*(wt/t-PHI_K_VAL);
     
     u=utilde*max(ulim)/(norm(utilde)+1E-1);
     x=x+u*dt;
@@ -146,8 +146,8 @@ opti.subject_to(X0_B==x0_b);
 opti.subject_to(norm(X(:,end)-xf)<=epsilon); % final constraint (over-
                                              % writes previous one from the 
                                              % loop
-opti.subject_to(X0_B(3)>=min_b)
-opti.minimize(-1*sum(ALPHA));
+opti.subject_to(X0_B(3)>=min_b); % battery constraint
+opti.minimize(-1*sum(ALPHA)); % cost (best coverage)
 
 opti.solver('ipopt');
 sol=opti.solve();
@@ -156,14 +156,13 @@ debug.x=sol.value(X);
 debug.u=sol.value(U);
 debug.alpha=sol.value(ALPHA);
 
-debug.phi_k_val=sol.value(phi_k_val);
-debug.phi_k_val=sol.value(phi_k_val);
+debug.phi_k_val=sol.value(PHI_K_VAL);
 
 
 %% visualization
 
 % to visualize the probability distribution in th plot
-sampl=linspace(xlim(1),xlim(2),length(K)^D); % build samples per each point
+sampl=linspace(xlim_(1),xlim_(2),length(K)^D); % build samples per each point
                                              % in space
 [probx,proby]=ndgrid(sampl,sampl);
 probx=probx(:);
@@ -195,7 +194,6 @@ hold on;
 for j=1:length(Mu)
     plot(Mu(1,j),Mu(2,j),'g^');
 end
-clear xlim;
 xlim([0 1]);
 ylim([0 1]);
 axis square;
@@ -212,7 +210,7 @@ plot(debug.x(1,end),debug.x(2,end),'rs');
 % for j=2:N
     % pause(.05);
     % delete(pl);
-%     pl=plot(debug.x(1,1:j),debug.x(2,1:j),'blue');
+    % pl=plot(debug.x(1,1:j),debug.x(2,1:j),'blue');
 % end
 set(ax1,'XTick',get(ax1,'YTick'));
 
