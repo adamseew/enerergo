@@ -11,6 +11,8 @@ D=2; % dimension, e.g., 2D, 3D, etc.
 L=2; % period
 Ai={[1 0;0 1],[1 0;0 -1],[-1 0;0 1],[-1 0;0 -1]};
 epsilon=0.05; % tollerance interval
+approx_f=1; % approximation factor, i.e., 1 no approximation. Use powers
+            % of 10
 
 if D~=2
     error("myComponent:notImplemented",strcat("Error. \nlinear transf",...
@@ -84,38 +86,36 @@ import casadi.*;
 opti=casadi.Opti();
 
 PHI_K_VAL=opti.variable(length(K)^D,1); % aux variables
-F_K_X_VAL=opti.variable(length(K)^D,1);
-DF_K_X_VAL=opti.variable(2,length(K)^D);
+f_k_x_val=[];
+df_k_x_val=[];
 
-X=opti.variable(2,N); % state
-U=opti.variable(2,N-1); % input
+X=opti.variable(2,N/approx_f); % state
+U=opti.variable(2,N/approx_f-1); % input
 ALPHA=opti.variable(length(Mu),1); % control variable
-X0_B=opti.variable(3,1); % battery at final time step (just to add it as a 
-                         % constraint)
+X0_B3=opti.variable(1,1); % battery at final time step (just to add it as a 
+                          % constraint)
 
 opti.set_initial(ALPHA,(1/length(Mu))*ones(length(Mu),1)); % setting ini-
                                                            % tial guess
 
 opti.subject_to(sum(ALPHA)<=1); % constraints on control variable
-opti.subject_to(ALPHA(1)>0);
-opti.subject_to(ALPHA(2)>0);
-opti.subject_to(ALPHA(3)>0);
-opti.subject_to(ALPHA(4)>0);
-
+opti.subject_to(ALPHA>0);
 opti.subject_to(X(:,1)==x); % state initial guess
 
 args.alpha=ALPHA;
+
+disp('entering main loop, i.e., transcription')
+wb=waitbar(0,''); % initializing progressbar
 
 for t=1:N-1
     utilde=0;
 
     for k=1:length(K)
        
-        F_K_X_VAL((k-1)*length(K)+ ...
-            1:k*length(K))=...
-            f_k_x(K(:,:,k),x,args);
-        DF_K_X_VAL(:,(k-1)*length(K)+1:k*length(K))=...
-            df_k_x(K(:,:,k),x,args)*L^D;
+        f_k_x_val=[f_k_x_val;...
+            f_k_x(K(:,:,k),x,args)];
+        df_k_x_val=[df_k_x_val ...
+            df_k_x(K(:,:,k),x,args)*L^D];
 
         if t==1 % phi_k is not dependent on x, i.e., it is the same at
                 % each t
@@ -127,29 +127,43 @@ for t=1:N-1
             end
         end
     end
-    wt=wt+F_K_X_VAL;
-    utilde=utilde-1*DF_K_X_VAL*Lambda_k*(wt/t-PHI_K_VAL);
+    wt=wt+f_k_x_val;
+    utilde=utilde-1*df_k_x_val*Lambda_k*(wt/t-PHI_K_VAL);
     
     u=utilde*max(ulim)/(norm(utilde)+1E-1);
     x=x+u*dt;
     
-    opti.subject_to(U(:,t)==u);
-    opti.subject_to(X(:,t+1)==x);
+    if mod(t,approx_f)==0
+        opti.subject_to(U(:,t/approx_f)==u);
+        opti.subject_to(X(:,t/approx_f+1)==x);
+    end
 
     x0_b=x0_b+dt*thevenin(x0_b,1,args); % battery model
     Voc=args.V+x0_b(1)+x0_b(2)+I*args.Rs;
     debug.z=[debug.z;x0_b(3)];
     debug.Voc=[debug.Voc;Voc];
 
+    f_k_x_val=[];
+    df_k_x_val=[];
+
+    waitbar(t/(N-1),wb,'');
+
 end
-opti.subject_to(X0_B==x0_b);
+
+close(wb);
+disp('exiting main loop')
+
+opti.subject_to(X0_B3==x0_b(3));
 opti.subject_to(norm(X(:,end)-xf)<=epsilon); % final constraint (over-
                                              % writes previous one from the 
-                                             % loop
-opti.subject_to(X0_B(3)>=min_b); % battery constraint
+                                             % loop)
+opti.subject_to(X0_B3>=min_b); % battery constraint
 opti.minimize(-1*sum(ALPHA)); % cost (best coverage)
 
 opti.solver('ipopt');
+
+disp('starting the solver')
+
 sol=opti.solve();
 
 debug.x=sol.value(X);
@@ -162,8 +176,9 @@ debug.phi_k_val=sol.value(PHI_K_VAL);
 %% visualization
 
 % to visualize the probability distribution in th plot
-sampl=linspace(xlim_(1),xlim_(2),length(K)^D); % build samples per each point
-                                             % in space
+
+sampl=linspace(xlim_(1),xlim_(2),length(K)^D); % build samples per each 
+                                               % point in space
 [probx,proby]=ndgrid(sampl,sampl);
 probx=probx(:);
 proby=proby(:);
