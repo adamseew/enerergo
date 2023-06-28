@@ -20,14 +20,13 @@ if D~=2
           " dimensions other than 2 (dimension is %d)"), D);
 end
 Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
-Mu(:,1)=[.33333;.14285];
-Mu(:,2)=[.83332;.1    ];
-Mu(:,3)=[.4    ;.57142];
-Mu(:,4)=[.83332;.85713];
-Sigma(:,:,1)=[.1;.1]*[.1;.1]'*1e-3+eye(D)*1e-3;
-Sigma(:,:,2)=Sigma(:,:,1);
-Sigma(:,:,3)=Sigma(:,:,1);
-Sigma(:,:,4)=Sigma(:,:,1);
+gauss_app=gauss; % starting Guassian mixture model designer app
+waitfor(gauss_app,"closed","yes"); % wait for Guassian mixture model 
+                                   % designer app to terminate
+Mu=gauss_app.Mu;
+Sigma=gauss_app.Sigma;
+alpha=gauss_app.alpha;
+delete(gauss_app.GaussianmixturemodeldesignerUIFigure)
 
 N=2000;
 dt=1e-2;
@@ -44,7 +43,7 @@ args.Am=Am;
 args.Mu=Mu;
 args.Sigma=Sigma;
 args.K=K;
-args.N=1;
+args.N=N;
 
 x=x0;
 debug.x=nan(2,N);
@@ -95,8 +94,7 @@ ALPHA=opti.variable(length(Mu),1); % control variable
 X0_B3=opti.variable(1,1); % battery at final time step (just to add it as a 
                           % constraint)
 
-opti.set_initial(ALPHA,(1/length(Mu))*ones(length(Mu),1)); % setting ini-
-                                                           % tial guess
+opti.set_initial(ALPHA,alpha); % setting initial guess
 
 opti.subject_to(sum(ALPHA)<=1); % constraints on control variable
 opti.subject_to(ALPHA>0);
