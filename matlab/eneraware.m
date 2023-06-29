@@ -3,6 +3,17 @@
 % controller from econtrol.m to derive a control action that respects the
 % battery constraints while maximazing the coverage
 
+
+answer=questdlg('Would you like to clean the environment?',...
+    'Clean',...
+	'Yes','No','No');
+switch answer
+case 'Yes'
+    clear;
+end
+clear("answer");
+
+
 %% definitions
 
 k=9; % number of freq. in Fourier transform
@@ -20,13 +31,26 @@ if D~=2
           " dimensions other than 2 (dimension is %d)"), D);
 end
 Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
+disp("starting gauss app")
 gauss_app=gauss; % starting Guassian mixture model designer app
-waitfor(gauss_app,"closed","yes"); % wait for Guassian mixture model 
-                                   % designer app to terminate
+try
+    waitfor(gauss_app,"closed","yes"); % wait for Guassian mixture model 
+                                       % designer app to terminate
+catch
+    delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
+    error("Mu, Sigma, alpha data from gauss.mlapp are required")
+end
 Mu=gauss_app.Mu;
 Sigma=gauss_app.Sigma;
 alpha=gauss_app.alpha;
-delete(gauss_app.GaussianmixturemodeldesignerUIFigure)
+delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
+if length(alpha)>1
+    disp(strcat("there are ",string(length(alpha)),...
+        " gaussians in the model"))
+else
+    disp("there is one gaussian in the model")
+end
+clear("gauss_app")
 
 N=2000;
 dt=1e-2;
@@ -57,13 +81,15 @@ Lambda_k=zeros(length(K)^D);
 
 %% battery
 
+% battery model from: 
+
 min_b=.05; % minimum battery constraint
 
 args.C1=4.78*1e2;
 args.R1=2.85*1e-2; % first RC element in the ECM
 args.C2=1.83*1e4;
 args.R2=4.44*1e-2;
-args.Q=.250; % charfe
+args.Q=.250; % charge
 args.V=3; % voltage
 args.Rs=5.55*1e4; % R in the ECM
 
@@ -90,7 +116,7 @@ df_k_x_val=[];
 
 X=opti.variable(2,N/approx_f); % state
 U=opti.variable(2,N/approx_f-1); % input
-ALPHA=opti.variable(length(Mu),1); % control variable
+ALPHA=opti.variable(length(alpha),1); % control variable
 X0_B3=opti.variable(1,1); % battery at final time step (just to add it as a 
                           % constraint)
 
@@ -106,6 +132,7 @@ disp('entering main loop, i.e., transcription')
 wb=waitbar(0,''); % initializing progressbar
 
 for t=1:N-1
+    time_start=tic;
     utilde=0;
 
     for k=1:length(K)
@@ -144,8 +171,10 @@ for t=1:N-1
     f_k_x_val=[];
     df_k_x_val=[];
 
-    waitbar(t/(N-1),wb,'');
-
+    remaining=double(toc(time_start))*(N-1-t)/60; % data for progressbar
+    waitbar(t/(N-1),wb,...
+        strcat(string(round(remaining))," minutes remaining"));
+    
 end
 
 close(wb);
@@ -204,7 +233,7 @@ set(h,'ZData',z-10);
 view(2);
 grid on;
 hold on;
-for j=1:length(Mu)
+for j=1:length(alpha)
     plot(Mu(1,j),Mu(2,j),'g^');
 end
 xlim([0 1]);
