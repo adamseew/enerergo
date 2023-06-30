@@ -5,9 +5,8 @@ function phi_k_val = phi_k(k,args)
 % Inputs:
 %   k   : current index from the set of indices K
 %   args: additional arguments. You must pass at least alpha (mixing 
-%         coefficients), D (dimension), Am (linear transformation matrices
-%         function), Mu (centers of the gaussians), L (period), Sigma 
-%         (covariance matrices of the gaussians)
+%         coefficients), D (dimension), Mu (centers of the gaussians), 
+%         L (period), Sigma (covariance matrices of the gaussians)
 % Outputs: 
 %   phi_k_val: length(k)x1 coefficients of the spatial distribution (in
 %              Rlength(k))
@@ -21,6 +20,9 @@ function phi_k_val = phi_k(k,args)
               "aussians)"));
     end
 
+    Ai={[1 0;0 1],[1 0;0 -1],[-1 0;0 1],[-1 0;0 -1]};
+    Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
+
     phi_k_val=0;
 
     % iterating gaussians one-by-one in the gaussian mixutre model
@@ -31,9 +33,9 @@ function phi_k_val = phi_k(k,args)
         for m=1:2^(args.D-1)
 
             phi_k_val=phi_k_val+(args.alpha(j)/(2^(args.D-1)))*...
-                cos(2*pi*k'*args.Am(m)*args.Mu(:,j)/args.L).*...
-                exp(diag(-2*pi^2*k'*args.Am(m)*args.Sigma(:,:,j)*...
-                    args.Am(m)'*k/args.L^2)...
+                cos(2*pi*k'*Am(m)*args.Mu(:,j)/args.L).*...
+                exp(diag(-2*pi^2*k'*Am(m)*args.Sigma(:,:,j)*...
+                    Am(m)'*k/args.L^2)...
                    );
         end
     end

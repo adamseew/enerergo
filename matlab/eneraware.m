@@ -20,7 +20,6 @@ k=9; % number of freq. in Fourier transform
 D=2; % dimension, e.g., 2D, 3D, etc.
 [K(1,:,:) K(2,:,:)]=ndgrid(0:1:k,0:1:k); % set of indices
 L=2; % period
-Ai={[1 0;0 1],[1 0;0 -1],[-1 0;0 1],[-1 0;0 -1]};
 epsilon=0.05; % tollerance interval
 approx_f=1; % approximation factor, i.e., 1 no approximation. Use powers
             % of 10
@@ -30,7 +29,7 @@ if D~=2
           "ormation matrices Am, indeces K are not yet implemented for",...
           " dimensions other than 2 (dimension is %d)"), D);
 end
-Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
+
 disp("starting gauss app")
 gauss_app=gauss; % starting Guassian mixture model designer app
 try
@@ -52,18 +51,17 @@ else
 end
 clear("gauss_app")
 
-N=2000;
+N=500;
 dt=1e-2;
 
 xlim_=[-L/2 L/2]; % limits (square)
-ulim=[0 1];
+ulim=[0 4];
 
 x0=[.1;.3]; % initial guesses
 xf=[.5;.5]; % desired final point, e.g., recharge station
 
 args.L=L; % wrapping arguments for AUX functions
 args.D=D;
-args.Am=Am;
 args.Mu=Mu;
 args.Sigma=Sigma;
 args.K=K;
