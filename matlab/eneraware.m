@@ -57,7 +57,7 @@ dt=1e-2;
 xlim_=[-L/2 L/2]; % limits (square)
 ulim=[0 4];
 
-x0=[.1;.3]; % initial guesses
+x0=[.9;.7]; % initial guesses
 xf=[.5;.5]; % desired final point, e.g., recharge station
 
 args.L=L; % wrapping arguments for AUX functions
