@@ -2,31 +2,54 @@
 % Ergodic controller for a spatial distribution (four gaussians in the
 % mixture model)
 
+
+answer=questdlg('Would you like to clean the environment?',...
+    'Clean',...
+	'Yes','No','No');
+switch answer
+case 'Yes'
+    clear;
+end
+clear("answer");
+
+
 %% definitions
 
-k=9; % number of freq. in Fourier transform
 D=2; % dimension, e.g., 2D, 3D, etc.
-[K(1,:,:) K(2,:,:)]=ndgrid(0:1:k,0:1:k); % set of indices
 L=2; % period
-Ai={[1 0;0 1],[1 0;0 -1],[-1 0;0 1],[-1 0;0 -1]};
 
 if D~=2
     error("myComponent:notImplemented",strcat("Error. \nlinear transf",...
           "ormation matrices Am, indeces K are not yet implemented for",...
           " dimensions other than 2 (dimension is %d)"), D);
 end
-Am=@(i) cell2mat(Ai(i)); % linear transformation matrices
-Mu(:,1)=[.33333;.14285];
-Mu(:,2)=[.83332;.1    ];
-Mu(:,3)=[.4    ;.57142];
-Mu(:,4)=[.83332;.85713];
-Sigma(:,:,1)=[.1;.1]*[.1;.1]'*1e-3+eye(D)*1e-3;
-Sigma(:,:,2)=Sigma(:,:,1);
-Sigma(:,:,3)=Sigma(:,:,1);
-Sigma(:,:,4)=Sigma(:,:,1);
-alpha=[.25;.25;.25;.25];
 
-N=2000;
+disp("starting gauss app")
+gauss_app=gauss("off"); % starting Guassian mixture model designer app
+try
+    waitfor(gauss_app,"closed","yes"); % wait for Guassian mixture model 
+                                       % designer app to terminate
+catch
+    delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
+    error("Data from gauss.mlapp are required")
+end
+Mu=gauss_app.Mu;
+Sigma=gauss_app.Sigma;
+alpha=gauss_app.alpha;
+k=gauss_app.k; % number of freq. in Fourier transform
+[K(1,:,:) K(2,:,:)]=ndgrid(0:1:k,0:1:k); % set of indices
+N=gauss_app.N; % horizon
+x0=gauss_app.x0; % initial guesses
+
+delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
+if length(alpha)>1
+    disp(strcat("there are ",string(length(alpha)),...
+        " gaussians in the model"))
+else
+    disp("there is one gaussian in the model")
+end
+clear("gauss_app")
+
 dt=1e-2;
 
 xlim=[-L/2 L/2]; % limits (square)
@@ -37,11 +60,10 @@ x0=[.05;.05];%[.5;.1]; % initial guesses
 args.L=L; % wrapping arguments for AUX functions
 args.D=D;
 args.alpha=alpha;
-args.Am=Am;
 args.Mu=Mu;
 args.Sigma=Sigma;
 args.K=K;
-args.N=1;
+args.N=N;
 
 x=x0;
 debug.x=nan(2,N);
@@ -134,35 +156,7 @@ pl=plot(debug.x(1,1),debug.x(2,1),'blue');
 for j=2:N
     pause(.1);
     delete(pl);
-    pl=plot(debug.x(1,1:j),debug.x(2,1:j),'blue','LineWidth',2);
+    pl=plot(debug.x(1,1:j),debug.x(2,1:j),'blue');
 end
 set(ax1,'XTick',get(ax1,'YTick'));
-
-csvwrite('traj.csv',(debug.x(:,1:10:N).*3)');
-
-return
-
-%% battery
-args.C1=4.78*1e2;
-args.C2=1.83*1e4;
-args.R1=2.85*1e-2;
-args.R2=4.44*1e-2;
-args.Q=.250;
-args.V=3;
-args.Rs=5.55*1e4;
-
-I=3;
-v1=3;
-v2=3;
-z=100;
-x0=[v1;v2;z];
-debug.z=z;
-Voc=args.V+x0(1)+x0(2)+I*args.Rs;
-debug.Voc=Voc;
-for j=1:N-1
-    x0=x0+dt*thevenin(x0,1,args);
-    Voc=args.V+x0(1)+x0(2)+I*args.Rs;
-    debug.z=[debug.z;x0(3)];
-    debug.Voc=[debug.Voc;Voc];
-end
 

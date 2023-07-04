@@ -16,9 +16,7 @@ clear("answer");
 
 %% definitions
 
-k=9; % number of freq. in Fourier transform
 D=2; % dimension, e.g., 2D, 3D, etc.
-[K(1,:,:) K(2,:,:)]=ndgrid(0:1:k,0:1:k); % set of indices
 L=2; % period
 epsilon=0.05; % tollerance interval
 approx_f=1; % approximation factor, i.e., 1 no approximation. Use powers
@@ -31,17 +29,23 @@ if D~=2
 end
 
 disp("starting gauss app")
-gauss_app=gauss; % starting Guassian mixture model designer app
+gauss_app=gauss("on"); % starting Guassian mixture model designer app
 try
     waitfor(gauss_app,"closed","yes"); % wait for Guassian mixture model 
                                        % designer app to terminate
 catch
     delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
-    error("Mu, Sigma, alpha data from gauss.mlapp are required")
+    error("Data from gauss.mlapp are required")
 end
 Mu=gauss_app.Mu;
 Sigma=gauss_app.Sigma;
 alpha=gauss_app.alpha;
+k=gauss_app.k; % number of freq. in Fourier transform
+[K(1,:,:) K(2,:,:)]=ndgrid(0:1:k,0:1:k); % set of indices
+N=gauss_app.N; % horizon
+x0=gauss_app.x0; % initial guesses
+xf=gauss_app.xf; % desired final point, e.g., recharge station
+
 delete(gauss_app.ErgodiccontrollerdesignerUIFigure)
 if length(alpha)>1
     disp(strcat("there are ",string(length(alpha)),...
@@ -51,14 +55,10 @@ else
 end
 clear("gauss_app")
 
-N=500;
 dt=1e-2;
 
 xlim_=[-L/2 L/2]; % limits (square)
 ulim=[0 4];
-
-x0=[.9;.7]; % initial guesses
-xf=[.5;.5]; % desired final point, e.g., recharge station
 
 args.L=L; % wrapping arguments for AUX functions
 args.D=D;
@@ -189,13 +189,27 @@ opti.solver('ipopt');
 
 disp('starting the solver')
 
-sol=opti.solve();
+try
+    sol=opti.solve();
 
-debug.x=sol.value(X);
-debug.u=sol.value(U);
-debug.alpha=sol.value(ALPHA);
+    disp('optimal solution found')
+    debug.x=sol.value(X);
+    debug.u=sol.value(U);
+    debug.alpha=sol.value(ALPHA);
 
-debug.phi_k_val=sol.value(PHI_K_VAL);
+    debug.phi_k_val=sol.value(PHI_K_VAL);
+catch
+    disp('optimal solution NOT found')
+
+    debug.x=opti.debug.value(X);
+    debug.u=opti.debug.value(U);
+    debug.alpha=opti.debug.value(ALPHA);
+
+    debug.phi_k_val=opti.debug.value(PHI_K_VAL);
+end
+
+fprintf("alphas: ")
+fprintf('%d ', debug.alpha); fprintf('\n');
 
 
 %% visualization
