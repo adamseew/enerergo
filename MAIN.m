@@ -12,7 +12,7 @@
 % Copyright (c) Adam Seewald, IA & GRAB Labs at Yale University
 % Department of Mechanical Engineering and Materials Science 
 % Distributed under CC BY-NC-SA licence
-% Details: https://c
+% Details: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
 [indx,tf]=listdlg('PromptString',{'Modality',''},...
     'SelectionMode','single','ListSize',[300 160],'ListString',...
