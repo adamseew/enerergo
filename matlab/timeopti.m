@@ -46,7 +46,6 @@ fdot=@(x,u) eye(2)*u; % craft's dynamics
 
 
 %% CasADi
-addpath('~/casadi');
 
 import casadi.*;
 opti=casadi.Opti();

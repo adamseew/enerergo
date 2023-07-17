@@ -103,8 +103,6 @@ debug.Voc=Voc;
 
 %% CasADi
 
-addpath('~/casadi');
-
 import casadi.*;
 opti=casadi.Opti();
 
