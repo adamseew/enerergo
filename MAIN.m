@@ -14,7 +14,6 @@
 % Distributed under CC BY-NC-SA licence
 % Details: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
-
 [indx,tf]=listdlg('PromptString',{'Modality',''},...
     'SelectionMode','single','ListSize',[300 160],'ListString',...
     {'pure ergodic control',...
@@ -26,13 +25,13 @@ CASADI_PATH='~/casadi';
 addpath(CASADI_PATH);
 cd matlab;
 
-switch indx
+switch tf
     case 1
         econtrol
     case 2
         timeopti
     case 3
-        enaware_prompt
+        eneraware
     case 4
         calinon
 end
