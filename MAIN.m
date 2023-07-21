@@ -12,7 +12,8 @@
 % Copyright (c) Adam Seewald, IA & GRAB Labs at Yale University
 % Department of Mechanical Engineering and Materials Science 
 % Distributed under CC BY-NC-SA licence
-% Details: https://c
+% Details: http://creativecommons.org/licenses/by-nc-sa/4.0/
+
 
 [indx,tf]=listdlg('PromptString',{'Modality',''},...
     'SelectionMode','single','ListSize',[300 160],'ListString',...
@@ -25,13 +26,13 @@ CASADI_PATH='~/casadi';
 addpath(CASADI_PATH);
 cd matlab;
 
-switch tf
+switch indx
     case 1
         econtrol
     case 2
         timeopti
     case 3
-        eneraware
+        enaware_prompt
     case 4
         calinon
 end
