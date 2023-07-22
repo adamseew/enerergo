@@ -31,8 +31,6 @@ while 1
 
     % battery model from: 
 
-    min_b=.05; % minimum battery constraint
-
     args.C1=4.78*1e2;
     args.R1=2.85*1e-2; % first RC element in the ECM
     args.C2=1.83*1e4;
@@ -45,6 +43,10 @@ while 1
     v1=3;
     v2=3;
     z=100; % initial SoC
+
+    if exist('Z_','var')
+        z=Z_;
+    end
     x0_b=[v1;v2;z];
     debug.z=z;
     Voc=args.V+x0_b(1)+x0_b(2)+I*args.Rs;
@@ -131,9 +133,17 @@ while 1
                                                  % writes previous one from
                                                  % the loop)
     opti.subject_to(X0_B3>=min_b); % battery constraint
+    if exist('ALPHA_CONST','var')
+
+        for k=1:length(ALPHA_CONST)-1 % add coverage order constraint
+            opti.subject_to(ALPHA(k)<=ALPHA(k+1));
+        end
+    end
     opti.minimize(-1*sum(ALPHA)); % cost (best coverage)
 
-    opti.solver('ipopt');
+    p_opts=struct('expand',false);
+    s_opts=struct('max_iter',500);
+    opti.solver('ipopt',p_opts,s_opts);
 
     disp('starting the solver')
 
@@ -157,7 +167,7 @@ while 1
 
         debug.phi_k_val=opti.debug.value(PHI_K_VAL);
 
-        if ~LOOP_UNTIL_OPT
+        if or(~LOOP_UNTIL_OPT,x0_b(3)<min_b)
             break;
         end
     end

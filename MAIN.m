@@ -25,13 +25,13 @@ CASADI_PATH='~/casadi';
 addpath(CASADI_PATH);
 cd matlab;
 
-switch tf
+switch indx
     case 1
         econtrol
     case 2
         timeopti
     case 3
-        eneraware
+        enaware_prompt
     case 4
         calinon
 end

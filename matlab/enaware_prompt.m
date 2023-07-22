@@ -62,5 +62,7 @@ N_STEP=3;
 
 % call the main enaware script
 
+min_b=.05; % minimum battery constraint
+
 enaware
 
