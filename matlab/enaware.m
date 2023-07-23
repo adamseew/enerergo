@@ -62,8 +62,8 @@ while 1
     f_k_x_val=[];
     df_k_x_val=[];
 
-    X=opti.variable(2,N/approx_f); % state
-    U=opti.variable(2,N/approx_f-1); % input
+    X=opti.variable(2,N); % state
+    U=opti.variable(2,N-1); % input
     ALPHA=opti.variable(length(alpha),1); % control variable
     X0_B3=opti.variable(1,1); % battery at final time step (just to add it as a 
                               % constraint)
@@ -105,12 +105,10 @@ while 1
     
         u=utilde*max(ulim)/(norm(utilde)+1E-1);
         x=x+u*dt;
-    
-        if mod(t,approx_f)==0
-            opti.subject_to(U(:,t/approx_f)==u);
-            opti.subject_to(X(:,t/approx_f+1)==x);
-        end
 
+        opti.subject_to(U(:,t)==u);
+        opti.subject_to(X(:,t+1)==x);
+        
         x0_b=x0_b+dt*thevenin(x0_b,1,args); % battery model
         Voc=args.V+x0_b(1)+x0_b(2)+I*args.Rs;
         debug.z=[debug.z;x0_b(3)];

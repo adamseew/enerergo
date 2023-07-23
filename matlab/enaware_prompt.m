@@ -20,8 +20,6 @@ clear("answer");
 D=2; % dimension, e.g., 2D, 3D, etc.
 L=2; % period
 epsilon=0.05; % tollerance interval
-approx_f=1; % approximation factor, i.e., 1 no approximation. Use powers
-            % of 10
 
 if D~=2
     error("myComponent:notImplemented",strcat("Error. \nlinear transf",...
@@ -58,11 +56,11 @@ clear("gauss_app")
 
 LOOP_UNTIL_OPT=1; % set to 1 so that the controller is refined until an
                   % optimal configuration is found. Set to 0 otherwise
-N_STEP=3;
+N_STEP=2;
 
 % call the main enaware script
 
-min_b=.05; % minimum battery constraint
+min_b=.1; % minimum battery constraint
 
 enaware
 
