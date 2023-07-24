@@ -1,6 +1,7 @@
 
 % Run default energy-aware ergodic search experiments in "Energy-aware 
-% ergodic search for continuous long-term coverage path planning"
+% ergodic search: Continuous long-term exploration for multiagent 
+% systems"
 
 
 answer=questdlg('Would you like to clean the environment?',...

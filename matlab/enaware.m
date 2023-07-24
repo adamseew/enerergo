@@ -35,7 +35,7 @@ while 1
     args.R1=2.85*1e-2; % first RC element in the ECM
     args.C2=1.83*1e4;
     args.R2=4.44*1e-2;
-    args.Q=.250; % charge
+    args.Q=.250; % capacity
     args.V=3; % voltage
     args.Rs=5.55*1e4; % R in the ECM
 
