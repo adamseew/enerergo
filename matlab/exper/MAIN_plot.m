@@ -124,6 +124,7 @@ for part_no=1:2:length(parts)
          WIDTH,...
          HEIGHT]);
     plot_no=plot_no+1;
+    set(fig,'Renderer','painters');
     saveas(fig,strcat('data/','fig_',...
         string(2*plot_no-1),'+',string(2*plot_no)),'svg');
 end
