@@ -8,9 +8,12 @@
 
 # uses https://www.bitcraze.io/products/old-products/crazyflie-2-0/
 
-
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.crazyflie.swarm import CachedCfFactory
+from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.swarm import Swarm
+from cflib.crazyflie import Crazyflie
+from cflib.utils import uri_helper
 
 import numpy as np
 import cflib.crtp
@@ -22,14 +25,19 @@ import sys
 URI1='radio://0/80/2M/E7E7E7E700'
 URI2='radio://0/80/2M/E7E7E7E702'
 URI3='radio://0/80/2M/E7E7E7E703'
-URI4='radio://0/80/2M/E7E7E7E705' # crazyflies URIs
+URI4='radio://0/80/2M/E7E7E7E709' # crazyflies URIs
 
-z0=0.4 # height from the ground
-dt=1
-base1=[.1,.3]
-base2=[.9,.7]
-base3=[.1,.7]
-base4=[.9,.3] # locations of the basestations
+z0_1=.35 # height from the ground
+z0_2=.45 # height from the ground
+dt=.1
+takeofft=1.8
+landt=3.5
+landf=20
+takeofff=5
+base1=[.3,.9]
+base2=[2.7,2.1]
+base3=[.3,2.1]
+base4=[2.7,.9] # locations of the basestations
 sequence1=[]
 sequence2=[]
 base_st1=[]
@@ -49,16 +57,24 @@ parts=[
     "part_no_23.mat","part_no_24.mat",
     "part_no_25.mat","part_no_26.mat",
     "part_no_27.mat","part_no_28.mat"
-] # trajectories from matlab
+] # trajectories from MATLAB (R)
 seq_args={}
 uris={} # list of URIs
+SCALE=3
+
+
+def activate_high_level_commander(scf):
+    scf.param.set_value('commander.enHighLevel', '1')
+    print('activated high level commander')
 
 
 def load_data(id): # call always before load_trajs!
+
     global seq_args
     global uris
     global base_st1
     global base_st2
+
     if ((id-1)%2) == 0:
         seq_args={
             URI1:[sequence1],URI2:[sequence2]
@@ -66,6 +82,7 @@ def load_data(id): # call always before load_trajs!
         uris={
             URI1,URI2
         }
+        print('sUAVs are ',URI1,', ',URI2)
         if ((id-1)%4)==0:
             base_st1=base1
             base_st2=base2
@@ -74,11 +91,12 @@ def load_data(id): # call always before load_trajs!
             base_st2=base1
     else:
         seq_args={
-            URI3:[sequence1],URI2:[sequence2]
+            URI3:[sequence1],URI4:[sequence2]
         }
         uris={
             URI3,URI4
         }
+        print('sUAVs are ',URI3,', ',URI4)
         if ((id+1)%4):
             base_st1=base3
             base_st2=base4
@@ -86,93 +104,121 @@ def load_data(id): # call always before load_trajs!
             base_st1=base4
             base_st2=base3
 
+    print('base stations are '+format(base_st1)+', '+format(base_st2))
+
 
 def load_trajs(id):
+
     partsdir="/home/user/Dropbox/acad/papers/energy-ergodic-search/scripts/matlab/exper/data/"
              # make sure the path is correct!
     part1=scipy.io.loadmat(partsdir+parts[2*id-2])
-    part2=scipy.io.loadmat(partsdir+parts[2*id-1])
-    dbgstrct1=part1['debug']
-    dbgstrct2=part2['debug']
+    dbgstrct1=part1['debug'] # loading data from MATLAB (R)
     traj1=dbgstrct1['x']
     traj1=traj1[0][0]
+ 
+    sequence1.append([base_st1[0],base_st1[1],z0_1,dt])
+    for j in range(int(len(traj1[0]))): # filling trajectories for first sequence
+        sequence1.append([traj1[0,j]*SCALE,traj1[1,j]*SCALE,z0_1,dt])
+    sequence1.append([base_st2[0],base_st2[1],z0_1,dt])
+
+    part2=scipy.io.loadmat(partsdir+parts[2*id-1])
+    dbgstrct2=part2['debug'] 
     traj2=dbgstrct2['x']
     traj2=traj2[0][0]
-    sequence1.append([base_st1[0],base_st1[1],z0,dt])
-    for j in range(len(traj1[0])):
-        sequence1.append([traj1[0,j],traj1[1,j],z0,dt])
-    sequence1.append([base_st2[0],base_st2[1],z0,dt])
-    sequence2.append([base_st2[0],base_st2[1],z0,dt])
-    for j in range(len(traj2[0])):
-        sequence2.append([traj2[0,j],traj2[1,j],z0,dt])
-    sequence2.append([base_st1[0],base_st1[1],z0,dt])
+
+    sequence2.append([base_st2[0],base_st2[1],z0_2,dt])
+    for j in range(int(len(traj2[0]))): # filling trajectories for second sequence
+        sequence2.append([traj2[0,j]*SCALE,traj2[1,j]*SCALE,z0_2,dt])
+    sequence2.append([base_st1[0],base_st1[1],z0_2,dt])
+
+    print('both sequences are initialized. First has '+format(len(sequence1))+' values. Second '+format(len(sequence2)))
+    print('ready to fly')
+
 
 
 def wait_for_param_download(scf):
+
     while not scf.cf.param.is_updated:
-        time.sleep(1.0)
+        time.sleep(.1)
     print('params downloaded for ',scf.cf.link_uri)
 
 
-def take_off(cf,position):
-    take_off_time=5
-    sleep_time=0.1
-    steps=int(take_off_time/sleep_time)
-    vz=position[2]/take_off_time
-    
-    for i in range(steps):
-        cf.commander.send_position_setpoint(position[0],
-                                            position[1],
-                                            z0*(range(steps)-i/range(steps)),0)
-        time.sleep(sleep_time)
-
-
-def land(cf,position):
-    landing_time=5
-    sleep_time=0.1
-    steps=int(landing_time/sleep_time)
-    vz=-position[2]/landing_time
-
-    for i in reversed(range(steps)):
-        cf.commander.send_position_setpoint(position[0],
-                                            position[1],
-                                            z0*(range(steps)-i/range(steps)),0)
-                                        #= (z0/(range(steps)+1))*(i+1)
-        time.sleep(sleep_time)
-
-    cf.commander.send_stop_setpoint()
-    time.sleep(1) # waiting for the packet
-
-
 def run_sequence(scf,sequence):
+
+    global SEQ_DELAY
+    print('radio initialized. Flying')
+    print('seq delay set to ',str(SEQ_DELAY))
+
     try:
         cf=scf.cf
+        activate_high_level_commander(cf) 
+        commander=cf.high_level_commander
+        
+        # take-off sequence
+        z0=sequence[0]
+        z0=z0[2]
+        if z0==base_st1:
+            time.sleep(SEQ_DELAY)
+        commander.takeoff(z0,takeofft)
+        base_st=sequence[0]
+        commander.go_to(base_st[0],
+                        base_st[1],
+                        base_st[2],
+                        0,
+                        dt,
+                        relative=False)
+        time.sleep(takeofff*takeofft)
+        
+        # flight
+        for position in sequence[:-1]:
+            print('setting position '+format(position))
+            commander.go_to(position[0],
+                            position[1],
+                            position[2],
+                            0,
+                            dt,
+                            relative=False)
+            time.sleep(dt) # commander.go_to is non-blocking
 
-        take_off(cf,sequence[0])
-        for position in sequence:
-            print('setting position {}'.format(position))
-            end_time=time.time()+position[3]
-            while time.time() < end_time:
-                cf.commander.send_position_setpoint(position[0],
-                                                    position[1],
-                                                    position[2],0)
-                time.sleep(dt)
-        land(cf,sequence[-1])
+        # land sequence
+        base_st=sequence[-1]
+        commander.go_to(base_st[0],
+                        base_st[1],
+                        base_st[2],
+                        0,
+                        dt,
+                        relative=False)
+        time.sleep(landf*dt)
+        commander.land(0,landt)
+        time.sleep(landt)
+        commander.stop()
+
+        print('flight completed')
+
     except Exception as e:
+        print('exception occured')
         print(e)
 
 
 if __name__ == '__main__':
+
+    global SEQ_DELAY
+
+    if len(sys.argv)>2:
+        SEQ_DELAY=float(sys.argv[2])
+    else:
+        SEQ_DELAY=0
+
     load_data(int(sys.argv[1])) # initializing URIs for crazyflies
     load_trajs(int(sys.argv[1])) # loading trajectories from .mat files
     cflib.crtp.init_drivers()
+    print('running sequence ',sys.argv[1])
 
     factory = CachedCfFactory(rw_cache='./cache')
     with Swarm(uris,factory=factory) as swarm:
-        # swarm.reset_estimators()
-        # uncomment to reset estimators
-        print('waiting for params to be downloaded...')
-        swarm.parallel(wait_for_param_download)
+        swarm.reset_estimators()
+        print('waiting for params to be downloaded. Might require a couple of minutes')
 
+        swarm.parallel(wait_for_param_download)
         swarm.parallel(run_sequence,args_dict=seq_args)
 
