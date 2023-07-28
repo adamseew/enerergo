@@ -27,13 +27,13 @@ URI2='radio://0/80/2M/E7E7E7E702'
 URI3='radio://0/80/2M/E7E7E7E703'
 URI4='radio://0/80/2M/E7E7E7E709' # crazyflies URIs
 
-z0_1=.35 # height from the ground
-z0_2=.45 # height from the ground
+z0_1=.4 # height from the ground
+z0_2=.4 # height from the ground
 dt=.1
-takeofft=1.8
+takeofft=.8
 landt=3.5
 landf=20
-takeofff=5
+takeofff=2
 base1=[.3,.9]
 base2=[2.7,2.1]
 base3=[.3,2.1]
@@ -146,6 +146,7 @@ def wait_for_param_download(scf):
 def run_sequence(scf,sequence):
 
     global SEQ_DELAY
+    global SEQ_ID
     print('radio initialized. Flying')
     print('seq delay set to ',str(SEQ_DELAY))
 
@@ -156,9 +157,13 @@ def run_sequence(scf,sequence):
         
         # take-off sequence
         z0=sequence[0]
+        if SEQ_ID==1:
+            if z0[0]==base_st1[0]:
+                time.sleep(SEQ_DELAY)
+        else:
+            if z0[0]==base_st2[0]:
+                time.sleep(SEQ_DELAY)
         z0=z0[2]
-        if z0==base_st1:
-            time.sleep(SEQ_DELAY)
         commander.takeoff(z0,takeofft)
         base_st=sequence[0]
         commander.go_to(base_st[0],
@@ -203,11 +208,15 @@ def run_sequence(scf,sequence):
 if __name__ == '__main__':
 
     global SEQ_DELAY
-
+    global SEQ_ID
     if len(sys.argv)>2:
         SEQ_DELAY=float(sys.argv[2])
     else:
         SEQ_DELAY=0
+    if len(sys.argv)>3:
+        SEQ_ID=int(sys.argv[3])
+    else:
+        SEQ_ID=1
 
     load_data(int(sys.argv[1])) # initializing URIs for crazyflies
     load_trajs(int(sys.argv[1])) # loading trajectories from .mat files
