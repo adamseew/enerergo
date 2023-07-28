@@ -30,9 +30,9 @@ URI4='radio://0/80/2M/E7E7E7E709' # crazyflies URIs
 z0_1=.4 # height from the ground
 z0_2=.4 # height from the ground
 dt=.1
-takeofft=.8
-landt=3.5
-landf=20
+takeofft=.8 # take-off time
+landt=3.5 # landing time
+landf=20 # these two are related to the hovering over the charging st.
 takeofff=2
 base1=[.3,.9]
 base2=[2.7,2.1]
@@ -192,8 +192,8 @@ def run_sequence(scf,sequence):
                         base_st[2],
                         0,
                         dt,
-                        relative=False)
-        time.sleep(landf*dt)
+                        relative=False) # hovering over the last pt
+        time.sleep(landf*dt) # sleeps for landf*dt (if landf is 20, sleeps for 2 s)
         commander.land(0,landt)
         time.sleep(landt)
         commander.stop()
