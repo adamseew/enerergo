@@ -4,7 +4,7 @@
 # make sure all the data are generated (after running the script MAIN_eneraware) in ../matlab/exper/data/ (part_no_[1..28].m)
 
 # accepts one argument, which specifies the id of the part to be flown 
-# (i.e., t0 in the figure in "Energy-aware ergodic search: Continuous long-term exploration for multiagent systems" is 1, t1 is 2, etc.)
+# (i.e., t0 in the figure in "Energy-Aware Ergodic Search: Continuous Exploration for Multi-agent Systems with Battery Constraints" is 1, t1 is 2, etc.)
 
 # uses https://www.bitcraze.io/products/old-products/crazyflie-2-0/
 

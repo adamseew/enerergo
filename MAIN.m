@@ -1,4 +1,4 @@
-
+function MAIN()
 % Runs all the experiments in this folder
 % Use econtrol for spatial distribution ergofic controller,
 %     timeopti for  time-optimal ergodic controller with IPOPT,
@@ -14,25 +14,25 @@
 % Distributed under CC BY-NC-SA licence
 % Details: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
-[indx,tf]=listdlg('PromptString',{'Modality',''},...
-    'SelectionMode','single','ListSize',[300 160],'ListString',...
-    {'pure ergodic control',...
-     'time optimal ergodic control',...
-     'energy-aware ergodic control',...
-     'Calinon ergodic control'});
+    [indx,tf]=listdlg('PromptString',{'Modality',''},...
+        'SelectionMode','single','ListSize',[300 160],'ListString',...
+        {'pure ergodic control',...
+         'time optimal ergodic control',...
+         'energy-aware ergodic control',...
+         'Calinon ergodic control'});
 
-CASADI_PATH='~/casadi';
-addpath(CASADI_PATH);
-cd matlab;
+    CASADI_PATH='~/casadi';
+    addpath(CASADI_PATH);
+    cd matlab;
 
-switch indx
-    case 1
-        econtrol
-    case 2
-        timeopti
-    case 3
-        enaware_prompt
-    case 4
-        calinon
+    switch indx
+        case 1
+            econtrol
+        case 2
+            timeopti
+        case 3
+            enaware_prompt
+        case 4
+            calinon
+    end
 end
-

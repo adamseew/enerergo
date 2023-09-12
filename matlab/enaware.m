@@ -51,6 +51,8 @@ while 1
     debug.z=z;
     Voc=args.V+x0_b(1)+x0_b(2)+I*args.Rs;
     debug.Voc=Voc;
+    debug.f_k_x_val=[];
+    debug.df_k_x_val=[];
 
 
     %% CasADi
@@ -67,11 +69,18 @@ while 1
     ALPHA=opti.variable(length(alpha),1); % control variable
     X0_B3=opti.variable(1,1); % battery at final time step (just to add it as a 
                               % constraint)
-
+    
     opti.set_initial(ALPHA,alpha); % setting initial guess
 
-    opti.subject_to(sum(ALPHA)<=1); % constraints on control variable
-    opti.subject_to(ALPHA>0);
+    if ~exist('ALPHA_FIX','var')
+        opti.subject_to(sum(ALPHA)<=1); % constraints on control variable
+        opti.subject_to(ALPHA>0);
+    else
+        for k=1:length(alpha)
+            opti.subject_to(ALPHA(k)==alpha(k))
+        end
+    end
+    
     opti.subject_to(X(:,1)==x); % state initial guess
 
     args.alpha=ALPHA;
@@ -113,8 +122,10 @@ while 1
         Voc=args.V+x0_b(1)+x0_b(2)+I*args.Rs;
         debug.z=[debug.z;x0_b(3)];
         debug.Voc=[debug.Voc;Voc];
-
+        
+        debug.f_k_x_val=[debug.f_k_x_val f_k_x_val];
         f_k_x_val=[];
+        debug.df_k_x_val=[debug.df_k_x_val;df_k_x_val];
         df_k_x_val=[];
 
         remaining=double(toc(time_start))*(N-1-t)/60; % data for prog. bar
@@ -127,9 +138,10 @@ while 1
     disp('exiting main loop')
 
     opti.subject_to(X0_B3==x0_b(3));
-    opti.subject_to(norm(X(:,end)-xf)<=epsilon); % final constraint (over-
-                                                 % writes previous one from
-                                                 % the loop)
+    opti.subject_to(norm(X(:,end)-xf)<=epsilon); % final constraint 
+                                                 % (over-writes pre-
+                                                 % vious one from the 
+                                                 % loop)
     opti.subject_to(X0_B3>=min_b); % battery constraint
     if exist('ALPHA_CONST','var')
 
@@ -137,7 +149,11 @@ while 1
             opti.subject_to(ALPHA(k)<=ALPHA(k+1));
         end
     end
-    opti.minimize(-1*sum(ALPHA)); % cost (best coverage)
+    if ~exist('ALPHA_FIX','var')
+        opti.minimize(-1*sum(ALPHA)); % cost (best coverage)
+    else
+        opti.minimize(1);
+    end
 
     p_opts=struct('expand',false);
     s_opts=struct('max_iter',500);
@@ -154,6 +170,15 @@ while 1
         debug.alpha=sol.value(ALPHA);
 
         debug.phi_k_val=sol.value(PHI_K_VAL);
+        debug.Lambda_k=Lambda_k;
+        debug.f_k_x_val=sol.value(debug.f_k_x_val);
+        debug.df_k_x_val=sol.value(debug.df_k_x_val);
+        debug.epsilon=[];
+        for k=1:length(debug.f_k_x_val)
+            debug.epsilon=[debug.epsilon ...
+                (debug.f_k_x_val(:,k)-debug.phi_k_val)'*Lambda_k*...
+                (debug.f_k_x_val(:,k)-debug.phi_k_val)];
+        end
 
         break;
     catch

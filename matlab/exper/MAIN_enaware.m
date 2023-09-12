@@ -1,7 +1,7 @@
 
-% Run default energy-aware ergodic search experiments in "Energy-aware 
-% ergodic search: Continuous long-term exploration for multiagent 
-% systems"
+% Run default energy-aware ergodic search experiments in "Energy-Aware 
+% Ergodic Search: Continuous Exploration for Multi-agent Systems with 
+% Battery Constraints"
 
 
 answer=questdlg('Would you like to clean the environment?',...
@@ -34,9 +34,9 @@ RECHARGE_GAIN=7;
 uav_x0=[[.1;.3] ...
         [.9;.7] ...
         [.1;.7] ...
-        [.9;.3]]; % charging station at start
-                  % uavs fly two-by-two, always landing at each others
-                  % bases;
+        [.9;.3]]; % charging stations at start
+                  % uavs fly two-by-two, always landing at each other's
+                  % base;
 uav_xf=[uav_x0(:,2) ...
         uav_x0(:,1) ...
         uav_x0(:,4) ...
@@ -80,7 +80,7 @@ while 1
     
     Z_=x0_b(3);
     
-    if Z_<min_b % finish once any of the UAVs' batteries is depleted
+    if count>=29
         break; 
     end
 

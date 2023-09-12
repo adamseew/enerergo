@@ -1,6 +1,7 @@
 
-% Generates plots im "Energy-aware ergodic search: Continuous long-term 
-% exploration for multiagent systems"
+% Generates plots in "Energy-Aware 
+% Ergodic Search: Continuous Exploration for Multi-agent Systems with 
+% Battery Constraints" (Fig. 5)
 
 % ! run after generating all the parts in data (run MAIN_eneaware.m first)
 
