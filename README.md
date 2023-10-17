@@ -3,7 +3,7 @@
 This repository contains **energy-aware**, time-optimal, and pure ergodic controllers.
 
 It constitutes the supplementary material to the paper "Energy-aware ergodic search: Continuous exploration for
-multi-agent systems with battery constraints", which is currently in preparation.
+multi-agent systems with battery constraints", which is currently under review.
 
 ## MATLAB
 
